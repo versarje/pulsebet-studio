@@ -1,10 +1,5 @@
 /**
- * PulseBet Studio — High-Speed Local HTTP + WebSocket Server (V3 - Optimized Cache)
- * Features:
- *  - Zero external API keys (Flashscore + 365Scores + ESPN fusion)
- *  - Ephemeral Session Notification Architecture (Refreshing the page starts with a clean notification slate)
- *  - AppSec Hardening (CSP, X-Frame-Options, Path Traversal Guard, WebSocket Rate-Limiting)
- *  - Smart Static Asset Caching for Instant Page Reloads
+ * PulseBet Studio — High-Speed Local HTTP + WebSocket Server (V3 - Optimized Cache + Telegram Auto-Signals)
  */
 
 const http = require('http');
@@ -20,8 +15,40 @@ const QuantSignalEngine = require('./engine/QuantSignalEngine');
 const MultiSourceOrchestrator = require('./scrapers/MultiSourceOrchestrator');
 
 const PORT = process.env.PORT || 3850;
-const HOST = process.env.HOST || '127.0.0.1'; // Strictly loopback only: LAN/Wi-Fi network sharing is disabled
+const HOST = process.env.HOST || '0.0.0.0';
 const PUBLIC_DIR = path.join(__dirname, 'public');
+
+// === TELEGRAM OTOMASYON AYARLARI ===
+const TELEGRAM_BOT_TOKEN = "8175137034:AAHolMiU6VLLf4em9lWeTMHdaEMBABgsJAY";
+const TELEGRAM_CHAT_ID = "-1003991937105";
+
+async function sendSignalToTelegram(signalData) {
+  if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN.includes("BURAYA")) return;
+  
+  const message = (
+    f = `🚨 *PULSEBET STUDIO — YENİ SİNYAL TETİKLENDİ*\n\n` +
+    `⚽ *Maç:* ${signalData.matchName || 'Bilinmeyen Maç'}\n` +
+    `📊 *Market:* \`${signalData.market || 'Canlı Market'}\`\n` +
+    `⚡ *Oran:* \`${signalData.odds || '-'}\` | 🎯 *Güven:* *%${signalData.confidence || '-'}*\n` +
+    `💡 *Analiz:* _${signalData.reason || 'Canlı gidişat ve baskı analizi.'}_\n\n` +
+    `⚡ _PulseBet AI Core Automation_`
+  );
+
+  // Node.js yerleşik fetch fonksiyonu (v18+) kullanılarak Telegram'a gönderim
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'Markdown'
+      })
+    });
+  } catch (err) {
+    console.error("Telegram bildirim gönderilemedi:", err);
+  }
+}
 
 const store = new MatchStateStore();
 const diffEngine = new StateDiffEngine();
@@ -33,6 +60,12 @@ let wss = null;
 
 function broadcast(payload) {
   if (!wss) return;
+  
+  // Eğer yeni bir sinyal eklendiyse otomatik Telegram'a gönder
+  if (payload && payload.type === 'NEW_SIGNAL' && payload.signal) {
+    sendSignalToTelegram(payload.signal);
+  }
+
   const data = JSON.stringify(payload);
   for (const client of wss.clients) {
     if (client.readyState === 1) {
@@ -174,11 +207,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const ext = path.extname(filePath).toLowerCase();
-    
-    // Optimizasyon: HTML her zaman güncel kalır, CSS/JS/görseller önbelleğe alınarak sayfa hızı artırılır
-    const cacheControl = (ext === '.html') 
-      ? 'no-cache' 
-      : 'public, max-age=3600';
+    const cacheControl = (ext === '.html') ? 'no-cache' : 'public, max-age=3600';
 
     res.writeHead(200, {
       'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
@@ -202,8 +231,6 @@ wss.on('connection', (ws) => {
 
   store.pruneNotifications();
 
-  // Ephemeral Session Start: On page load or refresh (F5), send matches & starredIds,
-  // but start the client's notification streams fresh (events: [], signals: []) so old notifications never persist across refreshes!
   ws.send(JSON.stringify({
     type: 'INIT_SNAPSHOT',
     matches: store.getSortedMatches(),
@@ -232,7 +259,7 @@ wss.on('connection', (ws) => {
         if (!match) return;
         const isStarred = store.toggleStar(msg.matchId);
         if (isStarred && now - (match.lastDeepEnrichAt || 0) > 1200) {
-          match.lastDeepEnrichAt = now;
+          match.lastDeepEnrolAt = now;
           await orchestrator.enrichSingleMatch(match);
         }
         broadcast({
@@ -268,7 +295,7 @@ wss.on('connection', (ws) => {
 
 server.listen(PORT, HOST, async () => {
   console.log(`\nPulseBet Studio — Yerel Analiz & Canlı Bahis Terminali`);
-  console.log(`🌐 Yerel Erişim: http://${HOST}:${PORT} (Ağ/IP Paylaşımı Devre Dışı)`);
+  console.log(`🌐 Yerel Erişim: http://${HOST}:${PORT}`);
   await orchestrator.start();
 });
 
