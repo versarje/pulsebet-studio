@@ -1,9 +1,10 @@
 /**
- * PulseBet Studio — High-Speed Local HTTP + WebSocket Server (V3)
+ * PulseBet Studio — High-Speed Local HTTP + WebSocket Server (V3 - Optimized Cache)
  * Features:
  *  - Zero external API keys (Flashscore + 365Scores + ESPN fusion)
  *  - Ephemeral Session Notification Architecture (Refreshing the page starts with a clean notification slate)
  *  - AppSec Hardening (CSP, X-Frame-Options, Path Traversal Guard, WebSocket Rate-Limiting)
+ *  - Smart Static Asset Caching for Instant Page Reloads
  */
 
 const http = require('http');
@@ -173,11 +174,15 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const ext = path.extname(filePath).toLowerCase();
+    
+    // Optimizasyon: HTML her zaman güncel kalır, CSS/JS/görseller önbelleğe alınarak sayfa hızı artırılır
+    const cacheControl = (ext === '.html') 
+      ? 'no-cache' 
+      : 'public, max-age=3600';
+
     res.writeHead(200, {
       'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
+      'Cache-Control': cacheControl
     });
     res.end(content);
   });
