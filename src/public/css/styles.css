@@ -1570,9 +1570,6 @@ body {
   transform: scale(1.06);
   box-shadow: var(--shadow-md);
 }
-.team-crest-lg:hover {
-  transform: scale(1.08);
-}
 .team-crest-lg img {
   width: 100%;
   height: 100%;
@@ -3713,32 +3710,101 @@ body {
 }
 
 @media (max-width: 768px) {
+  body {
+    height: 100vh;
+    overflow-y: auto;
+  }
   .topbar {
     height: auto;
     padding: 10px 14px;
     flex-wrap: wrap;
   }
   .workspace {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     height: auto;
+    overflow: visible;
+    grid-template-columns: 1fr;
   }
   .sidebar-matches {
     width: 100% !important;
     max-width: 100% !important;
-    height: 380px;
+    height: 320px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .match-studio {
+    padding: 10px 12px;
+    overflow-y: visible;
   }
   .hero-scoreboard {
     grid-template-columns: 1fr;
     gap: 12px;
     text-align: center;
   }
+  .hero-team,
   .hero-team.away {
-    flex-direction: row;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+  }
+  .team-info,
+  .team-info.align-right {
+    text-align: center;
+  }
+  .team-meta,
+  .team-meta.justify-end {
+    justify-content: center;
+  }
+  .score-display {
+    font-size: 38px;
+  }
+  .overview-bento,
+  .overview-bento-grid,
+  .overview-markets-grid,
+  .markets-grid,
+  .bottom-dual-grid,
+  .flow-evidence-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .studio-tabs,
+  .studio-nav-bar {
+    width: 100%;
+    overflow-x: auto;
     justify-content: flex-start;
-    text-align: left;
+    padding: 4px;
+  }
+  .studio-tab-btn,
+  .snav-tab {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+  .notifications-column {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    height: auto;
   }
   .stat-matrix-row {
     grid-template-columns: 40px 1fr 100px 1fr 40px;
     gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .brand-titles h1 {
+    font-size: 13px;
+  }
+  .score-display {
+    font-size: 32px;
+  }
+  .market-card {
+    padding: 10px 12px;
   }
 }
