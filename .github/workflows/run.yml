@@ -1,0 +1,28 @@
+name: Pulsebet Studio Bot
+
+on:
+  # 1. Otomatik Çalışma Sıklığı (Örn: Her 3 saatte bir çalışır)
+  schedule:
+    - cron: '0 */3 * * *' 
+
+  # 2. Butona basarak manuel çalıştırabilme özelliği
+  workflow_dispatch:
+
+jobs:
+  run-app:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodları İndir (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Node.js Kur (Sürüm 20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Bağımlılıkları Yükle
+        run: npm install
+
+      - name: Projeyi Başlat
+        run: npm start
